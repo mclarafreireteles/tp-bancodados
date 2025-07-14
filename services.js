@@ -3,8 +3,8 @@ import db from './database.js';
 import { v4 as uuidv4 } from 'uuid';
 import bcrypt from 'bcrypt';
 
-// --- Operações de Inserção (INSERT) ---
-export async function createUser(userData) {
+// Funções internas (não exportadas)
+async function createUser(userData) {
     const { first_name, last_name, email, password } = userData;
     const password_hash = await bcrypt.hash(password, 10);
     const id = uuidv4();
@@ -13,6 +13,23 @@ export async function createUser(userData) {
         [id, first_name, last_name, email, password_hash]
     );
     return res.rows[0];
+}
+
+async function createGambler(userId) {
+    const registration_date = new Date();
+    const res = await db.query(
+        `INSERT INTO gamblers(id, balance, registration_date) VALUES($1, 0.0, $2) RETURNING *`,
+        [userId, registration_date]
+    );
+    return res.rows[0];
+}
+
+// --- Funções de Negócio Exportadas ---
+
+export async function createGamblerWithUser(userData) {
+    const newUser = await createUser(userData);
+    const newGambler = await createGambler(newUser.id);
+    return newGambler;
 }
 
 export async function createAdmin(userId) {
@@ -27,6 +44,25 @@ export async function createEvent(eventData) {
         `INSERT INTO events(id, sport, description, expected_result, status, stated_on, admin_id) VALUES($1, $2, $3, $4, 'pending', NOW(), $5) RETURNING *`,
         [id, sport, description, expected_result, admin_id]
     );
+    return res.rows[0];
+}
+
+export async function createBet(betData) {
+    const { expected_result, value, event_id, gambler_id } = betData;
+    
+    // Para simplificar, usaremos uma odd fixa aqui.
+    const odd = 1.5; 
+    const possible_return = value * odd;
+
+    const id = uuidv4();
+    const bet_at = new Date();
+
+    const res = await db.query(
+        `INSERT INTO bets(id, expected_result, value, odd, possible_return, status, bet_at, event_id, gambler_id) 
+         VALUES($1, $2, $3, $4, $5, 'pending', $6, $7, $8) RETURNING *`,
+        [id, expected_result, value, odd, possible_return, bet_at, event_id, gambler_id]
+    );
+
     return res.rows[0];
 }
 
@@ -86,8 +122,6 @@ export async function deleteBet(betId) {
 }
 
 export async function deleteEvent(eventId) {
-    // Nota: É importante ter cuidado com DELETE. Dependendo das constraints,
-    // talvez você precise remover as apostas (`bets`) primeiro.
     const res = await db.query(`DELETE FROM events WHERE id = $1 RETURNING *`, [eventId]);
     return res.rows[0];
 }
