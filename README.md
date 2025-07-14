@@ -1,8 +1,3 @@
-Aqui está a documentação completa, formatada em Markdown, pronta para ser usada como seu arquivo README.md no GitHub.
-
-Gerenciamento de Apostas Esportivas
-Este é um projeto de aplicação de linha de comando (CLI) construído com Node.js que interage com um banco de dados PostgreSQL. A aplicação permite gerenciar usuários, eventos e apostas.
-
 📝 Sobre o Projeto
 O projeto foi desenvolvido para atender aos seguintes requisitos:
 
